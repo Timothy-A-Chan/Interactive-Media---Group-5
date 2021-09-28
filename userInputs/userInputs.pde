@@ -3,7 +3,7 @@ import controlP5.*;
 ControlP5 cp5;
 Table temperature;
 int index = 0;   
-int dayCounter = 0;   
+//int index = 0;   
 float skyHue, windowHue, buildingHue, glassHue;    // skyHue changes as the index changes
 float theta1, theta2 = 0;
 int day = 1;
@@ -11,6 +11,7 @@ int timeSlider = 0;
 boolean paused = false;
 PImage pause;
 PImage play;
+int dayCounter;
 
 
 void setup() {
@@ -31,6 +32,7 @@ void setup() {
     .setRange(0, 2010)
     .setValue(0)
     .setSliderMode(Slider.FLEXIBLE);
+    
   
   Button pauseButton = cp5.addButton("Pause")
     .setPosition(575, 625)
@@ -44,18 +46,22 @@ void draw() {
   index = int(cp5.getController("timeSlider").getValue());
   println(index);
   if (index < temperature.getRowCount() && paused == false) {      // index goes up to 2010
-    if (dayCounter >= 286) {
-      dayCounter = 0;
+    dayCounter = index%286;
+    /*
+    if (dayCounter == 0) {
+      index = 0;
     }
+    */
+    
     
 
     // Hues changing depending on time   
-    if (dayCounter > 0 && dayCounter < 36) {      // When the dayCounter is between 6:00AM - 9:00AM
+    if (dayCounter > 0 && dayCounter < 36) {      // When the index is between 6:00AM - 9:00AM
       skyHue = map(dayCounter, 0, 36, 0, 255);
       windowHue = map(dayCounter, 0, 36, 255, 0);
       glassHue = map(dayCounter, 0, 36, 0, 255);
       buildingHue = map(dayCounter, 0, 36, 107, 180);
-    } else if (dayCounter > 143 && dayCounter < 179) {      // When the dayCounter is between 6:00PM - 9:00PM
+    } else if (dayCounter > 143 && dayCounter < 179) {      // When the index is between 6:00PM - 9:00PM
       skyHue = map(dayCounter, 143, 179, 255, 0);
       windowHue = map(dayCounter, 143, 179, 0, 255);
       buildingHue = map(dayCounter, 143, 179, 180, 107);
@@ -66,7 +72,7 @@ void draw() {
 
 
     // Sun and Moon Cycle
-    int currentTemp = temperature.getInt(index, 1);
+    int currentTemp = temperature.getInt(dayCounter, 1);
     int minTemp = 26;      // Please replace this with code that can detect the lower 
     int maxTemp = 33;      // and higher range of the temperature
     int sunSizeLow = 200;  // The minimum size of the sun when temp is low
@@ -96,7 +102,7 @@ void draw() {
     text(info, 10, 680);   
     
     index++;
-    dayCounter++;
+    //index++;
     cp5.getController("timeSlider").setValue(index);
     
   }
@@ -300,17 +306,17 @@ void drawWindow(float windowHue, float skyHue, float buildingHue) {//input value
 
 
 
-/* This is a simple explanation on how the dayCounter works in relation to time
- Initially index and dayCounter is the same
- When they reach intervals of 286, the dayCounter resets back to 0
+/* This is a simple explanation on how the index works in relation to time
+ Initially index and index is the same
+ When they reach intervals of 286, the index resets back to 0
  Here is a chart that explains both counters
  
- |---------Time Chart in relation to dayCounter---------|
+ |---------Time Chart in relation to index---------|
  |                                                      |
- |       dayCounter = 0          Time: 6:00AM           |
- |       dayCounter = 72         Time: 12:00PM          |
- |       dayCounter = 143        Time: 6:00PM           |
- |       dayCounter = 215        Time: 12:00AM          |
+ |       index = 0          Time: 6:00AM           |
+ |       index = 72         Time: 12:00PM          |
+ |       index = 143        Time: 6:00PM           |
+ |       index = 215        Time: 12:00AM          |
  |                                                      |
  |-------Time and Day Chart in relation to Index--------|
  |                                                      |    
@@ -329,15 +335,15 @@ void drawWindow(float windowHue, float skyHue, float buildingHue) {//input value
 //  println( "Day: " + day);
 //  day++;
 //}      
-//if (dayCounter == 0) {
+//if (index == 0) {
 //  println("Index: "+index+ " | Morning 6:00AM");
 //}
-//else if (dayCounter == 72) {
+//else if (index == 72) {
 //  println("Index: "+index+ " | Noon 12:00PM");
 //}
-//else if (dayCounter == 143) {
+//else if (index == 143) {
 //  println("Index: "+index+ " | Night 6:00PM");
 //}
-//else if (dayCounter == 215){
+//else if (index == 215){
 //  println("Index: "+index+ " | Midnight 12:00AM");
 //}
