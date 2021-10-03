@@ -11,9 +11,9 @@ int day = 0;
 
 //Sound Function Stuff at line 135
 AudioContext ac;
-SamplePlayer p1, p2, p3;
-Glide gl1, gl2, gl3;
-Envelope env1, env2, env3;
+SamplePlayer p1, p2, p3, p4;
+Glide gl1, gl2, gl3, gl4;
+//Envelope env1, env2, env3;
 
 ControlP5 cp5;
 float Volume = 1;
@@ -141,12 +141,17 @@ void draw() {
     gl1.setValue(0.1 * Volume);
     if (dayCounter > 143 & dayCounter < 285){//night time
       gl2.setValue(0.2 * Volume);
-      gl3.setValue(0.8 * Volume);
+      gl3.setValue(0.5 * Volume);
     }
     else{//day time
       gl2.setValue(1 * Volume);
       gl3.setValue(0 * Volume);
     }
+    
+    //  NEEDS MODIFY WITH THE VALUE FROM RAIN TABLE!
+    //if (Rain value is true or something){ //set rain sound by changing the float before Volume
+      gl4.setValue(0.2 * Volume);
+    //}
     
     //mouse hover check
     hover(currentTemp);
@@ -162,6 +167,7 @@ void sound(){
   String sample1 = "D:/Processing Works/Interactive Media Data Visualisation/Traffic_Light_2.aiff";
   String sample2 = "D:/Processing Works/Interactive Media Data Visualisation/People_Sound.wav";
   String sample3 = "D:/Processing Works/Interactive Media Data Visualisation/Night_Sound.wav";
+  String sample4 = "D:/Processing Works/Interactive Media Data Visualisation/Rain.wav";
   
   //  Traffic_Light_2.aiff [Another Traffic Light]
   //  Ambulance.aiff [Ambulance + Traffic Light]
@@ -171,15 +177,17 @@ void sound(){
   //  Traffic_Light_1.wav [Traffic Light]
   //  Traffic_Sound_1.aiff [Traffic Sound]
   //  People_Sound.wav [People Sound]
-  //  523439__clearwavsound__night-time-crickets-call.wav
+  //  Night_Sound.wav
   
   p1 = new SamplePlayer(ac, SampleManager.sample(sample1));
   p2 = new SamplePlayer(ac, SampleManager.sample(sample2));
   p3 = new SamplePlayer(ac, SampleManager.sample(sample3));
+  p4 = new SamplePlayer(ac, SampleManager.sample(sample4));
   
   p1.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
   p2.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
   p3.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
+  p4.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
   
   gl1 = new Glide(ac, 1, 100);
   Gain g1 = new Gain(ac, 1, gl1);
@@ -193,9 +201,14 @@ void sound(){
   Gain g3 = new Gain(ac, 2, gl3);
   g3.addInput(p3);
   
+  gl4 = new Glide(ac, 1, 100);
+  Gain g4 = new Gain(ac, 2, gl4);
+  g4.addInput(p4);
+  
   ac.out.addInput(g1);
   ac.out.addInput(g2);
   ac.out.addInput(g3);
+  ac.out.addInput(g4);
   
   ac.start();
 }
