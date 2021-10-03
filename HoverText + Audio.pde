@@ -30,8 +30,8 @@ void setup() {
   cp5 = new ControlP5(this);
   
   cp5.addSlider("Volume")
-    .setPosition(1120, 70)
-    .setSize(30, 560)
+    .setPosition(20, 540)
+    .setSize(20, 130)
     .setRange(0, 1);
   
   sound();
@@ -251,8 +251,9 @@ void hover(int currentTemp){
     println("top left hand side");
   }
   
-  if (mouseX > 1120 && mouseX < 1160 && mouseY > 60 && mouseY < 640){
-    text("Volume: " + Volume, textX, textY);
+  if (mouseX > 20 && mouseX < 50 && mouseY > 530 && mouseY < 670){//540, 130
+    //text("Volume: " + Volume, textX, textY);
+    text(" ", textX, textY);
   }
   else if (mouseX > 80 && mouseX < 680 && mouseY > 100 && mouseY < 450){//Check for hovering above UTS building
     //texts
