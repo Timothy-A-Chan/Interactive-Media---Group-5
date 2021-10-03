@@ -15,6 +15,9 @@ SamplePlayer p1, p2, p3;
 Glide gl1, gl2, gl3;
 Envelope env1, env2, env3;
 
+ControlP5 cp5;
+float Volume = 1;
+
 void setup() {
   size(1200, 700);
   frameRate = 30;
@@ -24,14 +27,17 @@ void setup() {
   ellipseMode(CENTER);
   
   ac = new AudioContext();
+  cp5 = new ControlP5(this);
+  
+  cp5.addSlider("Volume")
+    .setPosition(1120, 70)
+    .setSize(30, 560)
+    .setRange(0, 1);
+  
   sound();
 }
 
 void draw() {
-  
-  //if (index > temperature.getRowCount()){
-  //  index = 0;
-  //}
   
   dayCounter = index%286;
   
@@ -132,11 +138,14 @@ void draw() {
     
     
     //Sound changes based on day parameter
+    gl1.setValue(0.1 * Volume);
     if (dayCounter > 143 & dayCounter < 285){//night time
-      gl2.setValue(0.2);
+      gl2.setValue(0.2 * Volume);
+      gl3.setValue(0.8 * Volume);
     }
     else{//day time
-      gl2.setValue(1);
+      gl2.setValue(1 * Volume);
+      gl3.setValue(0 * Volume);
     }
     
     //mouse hover check
@@ -149,9 +158,10 @@ void draw() {
 // Sound Functions
 void sound(){
   
+  //   CHANGE THE AUDIO FILE PATH!
   String sample1 = "D:/Processing Works/Interactive Media Data Visualisation/Traffic_Light_2.aiff";
   String sample2 = "D:/Processing Works/Interactive Media Data Visualisation/People_Sound.wav";
-  //String sample3 = "C:/Users/20853/Downloads/451734__florianreichelt__shopping-street-ambience.wav";
+  String sample3 = "D:/Processing Works/Interactive Media Data Visualisation/Night_Sound.wav";
   
   //  Traffic_Light_2.aiff [Another Traffic Light]
   //  Ambulance.aiff [Ambulance + Traffic Light]
@@ -161,41 +171,31 @@ void sound(){
   //  Traffic_Light_1.wav [Traffic Light]
   //  Traffic_Sound_1.aiff [Traffic Sound]
   //  People_Sound.wav [People Sound]
-  
-  //p1 = new SamplePlayer(ac, SampleManager.sample(sample1));
+  //  523439__clearwavsound__night-time-crickets-call.wav
   
   p1 = new SamplePlayer(ac, SampleManager.sample(sample1));
   p2 = new SamplePlayer(ac, SampleManager.sample(sample2));
-  //p3 = new SamplePlayer(ac, SampleManager.sample(sample3));
+  p3 = new SamplePlayer(ac, SampleManager.sample(sample3));
   
   p1.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
   p2.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
-  //p3.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
+  p3.setLoopType(SamplePlayer.LoopType.LOOP_FORWARDS);
   
-  Gain g1 = new Gain(ac, 1, 0.1);
+  gl1 = new Glide(ac, 1, 100);
+  Gain g1 = new Gain(ac, 1, gl1);
   g1.addInput(p1);
   
   gl2 = new Glide(ac, 1, 100);
   Gain g2 = new Gain(ac, 1, gl2);
   g2.addInput(p2);
   
-  //Gain g3 = new Gain(ac, 2, 0.2);
-  //g3.addInput(p3);
-  
-  //TapIn tin = new TapIn(ac, 5000);
-  //TapOut tout = new TapOut(ac, tin, 4000);
-  //tin.addInput(p3);
-  
-  //Panner p = new Panner(ac, 0);
-  
-  
-  //p.addInput(p3);
-  //p.addInput(tout);
-  //g3.addInput(p);
+  gl3 = new Glide(ac, 1, 100);
+  Gain g3 = new Gain(ac, 2, gl3);
+  g3.addInput(p3);
   
   ac.out.addInput(g1);
   ac.out.addInput(g2);
-  //ac.out.addInput(g3);
+  ac.out.addInput(g3);
   
   ac.start();
 }
@@ -238,8 +238,10 @@ void hover(int currentTemp){
     println("top left hand side");
   }
   
-  
-  if (mouseX > 80 && mouseX < 680 && mouseY > 100 && mouseY < 450){//Check for hovering above UTS building
+  if (mouseX > 1120 && mouseX < 1160 && mouseY > 60 && mouseY < 640){
+    text("Volume: " + Volume, textX, textY);
+  }
+  else if (mouseX > 80 && mouseX < 680 && mouseY > 100 && mouseY < 450){//Check for hovering above UTS building
     //texts
     text("UTS Building Status", textX, textY);//695, 230
     text("'Put some parameter related to building here'", textX, textY - 30);//695, 260
@@ -255,12 +257,13 @@ void hover(int currentTemp){
     text("Current Temperature", textX, textY - 30);//815, 510
     text(currentTemp + " degrees Celsuis", textX, textY - 60);//815, 540
   }
-  else{//check for hovering above ground
+  else {//check for hovering above ground
     //texts
     text("People Counter Status", textX, textY);
     text("Current People Counter", textX, textY - 30);
     text("'pplCountParameter' peoples", textX, textY - 60);
   }
+  //else
   
 }
 
