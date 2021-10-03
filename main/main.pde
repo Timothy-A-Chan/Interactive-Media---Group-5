@@ -8,6 +8,20 @@ int index = 0;
 int dayCounter;
 int currentDay = 1;
 
+// Temp, rainfall, people
+int currentTemp;
+int currentRainfall;
+int currentPeople;
+
+// Store int people counter x and y
+//int [] peopleX = new int [18];
+//int [] peopleY = new int [18];
+
+ArrayList<Integer> peopleX = new ArrayList<Integer>();
+ArrayList<Integer> peopleY = new ArrayList<Integer>();
+ArrayList<Integer> type = new ArrayList<Integer>();
+
+
 // Colour changing variables
 float skyHue, windowHue, buildingHue, glassHue;
 
@@ -27,7 +41,10 @@ boolean paused = false;
 boolean showText1, showText2 = true;
 
 // Images
-PImage pause, play, person, hottest, coldest, rainiest, crowded;
+PImage pause, play, person, hottest, coldest, rainiest, crowded, help;
+
+// Help toggle
+boolean helpToggle = false;
 
 // Sound Function Stuff at line 135
 AudioContext ac;
@@ -39,7 +56,7 @@ void setup() {
   size(1200, 700);
   frameRate = 30;
   temperature = loadTable("https://eif-research.feit.uts.edu.au/api/csv/?rFromDate=2021-06-14T06%3A00&rToDate=2021-06-21T06%3A00&rFamily=weather&rSensor=AT", "csv");
-  peopleCounter = loadTable("https://eif-research.feit.uts.edu.au/api/csv/?rFromDate=2020-06-14T06%3A00&rToDate=2020-12-24T06%3A00&rFamily=people_sh&rSensor=CB11.PC02.14.Broadway&rSubSensor=CB11.02.Broadway.East+In", "csv");
+  peopleCounter = loadTable("https://eif-research.feit.uts.edu.au/api/csv/?rFromDate=2021-06-14T06%3A00&rToDate=2021-07-26T06%3A00&rFamily=people_sh&rSensor=CB11.PC02.14.Broadway&rSubSensor=CB11.02.Broadway.East+In", "csv");
   rain = loadTable("https://eif-research.feit.uts.edu.au/api/csv/?rFromDate=2021-06-14T06%3A00&rToDate=2021-06-21T06%3A00&rFamily=weather&rSensor=RT", "csv");
   play = loadImage("play.png");
   pause = loadImage("pause.png");
@@ -48,6 +65,7 @@ void setup() {
   coldest = loadImage("coldest.png");
   rainiest = loadImage("rainy.png");
   crowded = loadImage("crowd.png");
+  help = loadImage("help.png");
   play.resize(50, 50);
   pause.resize(50, 50);
   person.resize(36, 56); //Ratio (9:14)
@@ -55,6 +73,7 @@ void setup() {
   coldest.resize(30, 100); //Ratio (3:10)
   rainiest.resize(70, 60); //Ratio (7:6)
   crowded.resize(70, 56); //Ratio (5:4)
+  help.resize(30,45); //Ratio (6:9)
   cp5 = new ControlP5(this);
 
   cp5.addSlider("Volume")
@@ -86,6 +105,11 @@ void setup() {
     .setPosition(1085, 425)
     .setImage(crowded)
     .setSize(70, 56);
+    
+  cp5.addButton("Help")
+    .setPosition(1160,10)
+    .setSize(50,50)
+    .setImage(help);
 
   cp5.addButton("ToggleText")
     .setPosition(1000, 625)
@@ -99,15 +123,19 @@ void setup() {
   sound();
 }
 
-void draw() {  
-  if (index < temperature.getRowCount() && paused == false) {      // index goes up to 2010
+void draw() {
+  test();
+}
+
+void test(){
+if (index < temperature.getRowCount() && paused == false) {      // index goes up to 2010
     if (dayCounter >= 286) { 
       currentDay++;
       dayCounter = 0;
     }
-    int currentTemp = temperature.getInt(index, 1);
-    int currentPeople = peopleCounter.getInt(index, 1);
-    float currentRainfall = rain.getInt(index, 1);
+    currentTemp = temperature.getInt(index, 1);
+    currentPeople = peopleCounter.getInt(index, 1);
+    currentRainfall = rain.getInt(index, 1);
 
     // Hues changing depending on time   
     if (dayCounter > 0 && dayCounter < 36) {      // When the dayCounter is between 6:00AM - 9:00AM
@@ -142,7 +170,10 @@ void draw() {
 
     // Weather
     rainDroplets();
-
+    
+    //Help
+    HelpText();
+    
     // Debugging Tools    
     textSize(25);
 
@@ -172,6 +203,50 @@ void draw() {
     //mouse hover check
     hover(currentTemp, currentRainfall, currentPeople);
   }
+  
+  else{
+    if (dayCounter > 0 && dayCounter < 36) {      // When the dayCounter is between 6:00AM - 9:00AM
+      skyHue = map(dayCounter, 0, 36, 0, 255);
+      windowHue = map(dayCounter, 0, 36, 255, 0);
+      glassHue = map(dayCounter, 0, 36, 0, 255);
+      buildingHue = map(dayCounter, 0, 36, 107, 180);
+    } else if (dayCounter > 143 && dayCounter < 179) {      // When the dayCounter is between 6:00PM - 9:00PM
+      skyHue = map(dayCounter, 143, 179, 255, 0);
+      windowHue = map(dayCounter, 143, 179, 0, 255);
+      buildingHue = map(dayCounter, 143, 179, 180, 107);
+    }
+    fill(skyHue/2, 2*skyHue, 3*skyHue);
+    rect(0, 0, width, height);
+
+    // Sun and Moon Cycle
+    orbit();
+
+    // The Ground
+    fill(120, 120, 120);
+    noStroke();
+    rect(0, 400, width, height);
+
+    // The Building
+    drawBuilding(skyHue, buildingHue);
+
+    // Time Slider
+    timeSlider();
+
+    //People Counter
+    //peopleCounterGenerator();
+
+    // Weather
+    rainDroplets();
+    
+    
+    HelpText();
+    
+    //People paused
+    peopleCounterPause();
+    
+    hover(currentTemp, currentRainfall, currentPeople);
+  }
+  
   if (index > 2010) {
     resetDay(0, 1);
   }
@@ -222,7 +297,9 @@ void hover(int currentTemp, float currentRainfall, int currentPeople) {
   int fillColor;
   int textX = 0;
   int textY = 0;
-
+  
+  textSize(25);
+  
   if (dayCounter > 0 && dayCounter < 180) {
     fillColor = 0;
     fill(fillColor);
@@ -255,33 +332,32 @@ void hover(int currentTemp, float currentRainfall, int currentPeople) {
   if (showText1 && showText2) {
     if (mouseX > 80 && mouseX < 680 && mouseY > 100 && mouseY < 450 && index < 2011) {//Check for hovering above UTS building
       //texts
-      text("UTS Building Status", textX, textY);//695, 230
-      text("'Put some parameter related to building here'", textX, textY - 30);//695, 260
-      text("'UTS parameter' stuff", textX, textY - 60);//695, 290
       //Outlines the building to indicate that the mouse is hovering above the building
-      fill(255, 255, 255, 0);
-      strokeWeight(0.5);
-      rect(80, 100, 600, 350);
+      //fill(255, 255, 255, 0);
+      //strokeWeight(0.5);
+      //rect(80, 100, 600, 350);
     } else if (mouseY < 400 && index < 2011) {//check for hovering above sky
       //texts
       text(temperature.getString(index, 0), textX, textY-60);  
       text("Temperature: " + currentTemp + "°C", textX, textY - 30);
       text("Rainfall: " + currentRainfall + " mm", textX, textY);
-    } else if (mouseX>1025 && mouseX<1055 && mouseY>500 && mouseY < 600) {
+    } 
+    else if (mouseX>1025 && mouseX<1055 && mouseY>500 && mouseY < 600) {
       int hottest[] = getMax(temperature);
       text("Hottest during " + temperature.getString(hottest[0], 0) + " at " + hottest[1] + "°C", textX-300, mouseY);
     } else if (mouseX>1100 && mouseX<1130 && mouseY>500 && mouseY < 600) {
-      int coldest[] = getMax(temperature);
+      int coldest[] = getMin(temperature);
       text("Coldest during " + temperature.getString(coldest[0], 0) + " at " + coldest[1] + "°C", textX-400, mouseY);
     } else if (mouseX>1000 && mouseX<1070 && mouseY>425 && mouseY < 485) {
       int rainiest[] = getMax(rain);
       text("Rainiest during " + rain.getString(rainiest[0], 0) + " at " + rainiest[1] + "mm",textX-300, mouseY+50);
     } else if (mouseX>1085 && mouseX<1155 && mouseY>425 && mouseY < 481) {
-      int people[] = getMax(rain);
+      int people[] = getMax(peopleCounter);
       text("Most people during " + rain.getString(people[0], 0) + " at " + people[1] + " people",textX-500, mouseY+50);
     } else if (index < 2011) {//check for hovering above ground
       //texts
-      text("People Counter Status: " + currentPeople + " Person/s", textX, textY);
+      text("People Counter Status: " + currentPeople + " Person/s", textX, textY); 
+      
     }
   }
 }
@@ -359,14 +435,48 @@ void ToggleText() {
   }
 }
 
+void HelpText(){
+   if(helpToggle){
+   fill(255);
+   rect(700,100,475,250);
+   fill(0);
+   textSize(20);
+   text("Click to Change Day/Hover to View Info",710,120);
+   text("Time Bar = Skip to day (1-7)", 810, 150);
+   text("Thermometer = Hottest/Coldest Day",810, 170);
+   text("Rain Cloud = Rainiest Day", 810, 190);
+   text("People = Most Crowded Day", 810, 210);
+   text("Toggle Text Button enables/disables text (T)", 710,240);
+   text("Volume Slider Changes Volume of Sounds", 710, 260);
+   text("Hover over sky to see live weather", 710,290);
+   text("Hover over ground to see live poeple count", 710,310);
+   text("Pause button to toggle between pause/play (P)",710,340);
+   }
+   
+}
+
+void Help() {
+  if(helpToggle){
+    
+    helpToggle = false;
+  }
+  
+  else{
+    helpToggle = true;
+  }
+}
+
 void Pause() {
   if (paused == false) {
     cp5.getController("Pause").setImage(play);
     fill(255, 0, 0);
-    text("Click play to see changes", 30, 670);
+    //text("Click play to see changes", 30, 670);
+    Volume = 0;
+    test();
     paused = true;
   } else if (paused == true) {
     cp5.getController("Pause").setImage(pause);
+    Volume = 1;
     paused = false;
   }
 }
@@ -374,25 +484,25 @@ void Pause() {
 void Hot() {
   int hottest[] = getMax(temperature);
   println("Hottest during " + temperature.getString(hottest[0], 0) + " at " + hottest[1] + "°C");
-  resetDay(getDay(hottest[0])*286, getDay(hottest[0]));
+  resetDay(getDay(hottest[0])*286 + 1, getDay(hottest[0]));
 }
 
 void Cold() {
   int coldest[] = getMin(temperature);
   println("Coldest during " + temperature.getString(coldest[0], 0) + " at " + coldest[1] + "°C");
-  resetDay(getDay(coldest[0])*286, getDay(coldest[0]));
+  resetDay(getDay(coldest[0])*286 + 1, getDay(coldest[0]));
 }
 
 void Rain() {
   int rainiest[] = getMax(rain);
   println("Rainiest during " + rain.getString(rainiest[0], 0) + " at " + rainiest[1] + "mm");
-  resetDay(getDay(rainiest[0])*286, getDay(rainiest[0]));
+  resetDay(getDay(rainiest[0])*286 + 1, getDay(rainiest[0]));
 }
 
 void Crowded() {
   int crowd[] = getMax(peopleCounter);
-  println("Most people during " + rain.getString(crowd[0], 0) + " at " + crowd[1] + " people");
-  resetDay(getDay(crowd[0])*286, getDay(crowd[0]));
+  println("Most people during " + peopleCounter.getString(crowd[0], 0) + " at " + crowd[1] + " people");
+  resetDay(getDay(crowd[0])*286 + 1, getDay(crowd[0]));
 }
 
 void rainDroplets() {
@@ -402,16 +512,15 @@ void rainDroplets() {
   int currentRain = rain.getInt(index, 1);
   if (currentRain > 0) {
     for (int i=0; i<currentRain*2; i++) {
-      rainXPos[i] = random(0, width);
-      rainYPos[i] =random(0, height);
-      rainSpeed[i] = random(5, 30);
-      rainWeight[i]=random(1, 5);
-      rainLine[i]=random(5, 20);
+      rainXPos[i] = random(0, 1200);
+      rainYPos[i] =random(0, 700);
+      rainSpeed[i] = random(10, 50);
+      rainLine[i]=random(5, currentRain);
     }
     for (int i=0; i<currentRain*2; i++) {
-      strokeWeight(rainWeight[i]);
+      strokeWeight(3);
       stroke(30*rainSpeed[i], 150);
-      line(rainXPos[i], rainYPos[i], rainXPos[i]+rainLine[i]*sin(PI/3), rainYPos[i]-rainLine[i]);
+      line(rainXPos[i], rainYPos[i], rainXPos[i]+rainLine[i]*sin(PI/3), rainYPos[i]-rainLine[i]);    
       rainYPos[i] += rainSpeed[i]/2;
       rainXPos[i]=rainXPos[i]-rainSpeed[i]/3;
     }
@@ -630,16 +739,78 @@ void peopleCounterGenerator() {
 
     //Generates people
     int i = 0;
-
+    
+    peopleX.clear();
+    peopleY.clear();
+    type.clear();
+    
     while (i < people) { // loop to create the correct amount of feet for each person
 
       int randomX = (int) random(0, 1200);
       int randomY = (int) random(350, 650);
-      person = loadImage("person"+int(random(1, 10))+".png");
+      int randomType = (int)random(1, 10);
+      peopleX.add(randomX);
+      peopleY.add(randomY);
+      type.add(randomType);
+      person = loadImage("person"+ randomType +".png");
       image(person, randomX, randomY);
 
       i++;
     }
+  }
+}
+
+void peopleCounterPause(){
+  for(int i = 0; i < peopleX.size(); i++){
+    peopleX.get(i);
+    peopleY.get(i);
+    type.get(i);
+    person = loadImage("person"+ type.get(i) +".png");
+    image(person, peopleX.get(i), peopleY.get(i));
+    println("People x" + peopleX.get(i));
+    println("People y" + peopleX.get(i));
+  }
+}
+
+void keyPressed(){
+  if(key == 'p' ){
+  Pause();
+  }
+  
+  if(key == 'h'){
+  Help();
+  }
+  
+  if(key == 't'){
+  ToggleText();
+  }
+  
+  if(key == '1'){
+  resetDay(0, 1);
+  }
+  
+  if(key == '2'){
+  resetDay(287, 2);
+  }
+  
+  if(key == '3'){
+   resetDay(2*286 + 1, 2);
+  }
+  
+  if(key == '4'){
+  resetDay(3*286 + 1, 4);
+  }
+  
+  if(key == '5'){
+   resetDay(4*286 + 1, 5);
+  }
+  
+  if(key == '6'){
+   resetDay(5*286 + 1, 6);
+  }
+  
+  if(key == '7'){
+   resetDay(6*286 + 1, 7);
   }
 }
 
